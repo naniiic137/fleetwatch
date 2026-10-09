@@ -1,0 +1,46 @@
+# Unit tests for FleetWatchCertExpiringSoon (fleetwatch_probe_tls_cert_expiry_days < 14, for: 15m).
+# Run with: promtool test rules deploy/prometheus/tests/*_test.yml
+
+rule_files:
+  - ../alerts.yml
+
+evaluation_interval: 15s
+
+tests:
+  - name: cert expiring in under 14 days fires after 15 minutes
+    interval: 15s
+    input_series:
+      - series: 'fleetwatch_probe_tls_cert_expiry_days{target="expiring-site"}'
+        values: '10.5x90'
+      # Exactly 14 days left is not "under 14 days".
+      - series: 'fleetwatch_probe_tls_cert_expiry_days{target="boundary-site"}'
+        values: '14x90'
+      - series: 'fleetwatch_probe_tls_cert_expiry_days{target="fresh-site"}'
+        values: '60x90'
+    alert_rule_test:
+      # Under the threshold for less than 15 minutes: pending only.
+      - eval_time: 10m
+        alertname: FleetWatchCertExpiringSoon
+        exp_alerts: []
+      - eval_time: 14m59s
+        alertname: FleetWatchCertExpiringSoon
+        exp_alerts: []
+      # 15 minutes under the threshold: fires for expiring-site only.
+      - eval_time: 15m
+        alertname: FleetWatchCertExpiringSoon
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              target: expiring-site
+            exp_annotations:
+              summary: "TLS certificate of expiring-site expires soon"
+              description: "The certificate of expiring-site expires in 10.5 days (threshold: 14 days)."
+      - eval_time: 20m
+        alertname: FleetWatchCertExpiringSoon
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              target: expiring-site
+            exp_annotations:
+              summary: "TLS certificate of expiring-site expires soon"
+              description: "The certificate of expiring-site expires in 10.5 days (threshold: 14 days)."

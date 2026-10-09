@@ -2,14 +2,15 @@
 
 [![CI](https://github.com/naniiic137/fleetwatch/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/naniiic137/fleetwatch/actions/workflows/ci.yml)
 [![Release](https://github.com/naniiic137/fleetwatch/actions/workflows/release.yml/badge.svg)](https://github.com/naniiic137/fleetwatch/actions/workflows/release.yml)
+[![Live status page](https://img.shields.io/badge/status_page-live-brightgreen)](https://fleetwatch.hamza-benismail-6.workers.dev)
+
+**Live status page: [fleetwatch.hamza-benismail-6.workers.dev](https://fleetwatch.hamza-benismail-6.workers.dev)**
 
 **Uptime, latency and TLS-expiry monitoring for my live sites, built end to end:**
 a dependency-free Python probe with hand-written Prometheus metrics, a Docker
-Compose stack with Prometheus alerts and a Grafana dashboard, a hardened Helm
+Compose stack with Prometheus alerts, Alertmanager and a Grafana dashboard, a hardened Helm
 chart, a Terraform module, a CI pipeline that spins up a real Kubernetes cluster,
 and an always-on Cloudflare Worker that serves the public status page.
-
-**Live status page:** _coming soon (Cloudflare Worker URL goes here)_
 
 ## Architecture
 
@@ -20,9 +21,11 @@ flowchart LR
     subgraph local["Self-hosted stack: docker compose or Kubernetes"]
         probe["probe<br/>Python stdlib<br/>/metrics /healthz /readyz"]
         prom["Prometheus<br/>scrape + alert rules"]
+        am["Alertmanager (compose)<br/>group, route, notify"]
         graf["Grafana<br/>provisioned dashboard"]
         probe -- "HTTP checks every 30 s" --> sites
         prom -- "scrape /metrics" --> probe
+        prom -- "firing alerts" --> am
         graf -- "PromQL" --> prom
     end
 
@@ -38,7 +41,7 @@ flowchart LR
     visitors["Visitors"] --> worker
 
     subgraph gha["GitHub Actions, push and PR only"]
-        ci["tests, ruff, hadolint, helm lint + kubeconform,<br/>terraform validate, promtool, docker build, Trivy,<br/>kind e2e, compose smoke test"]
+        ci["tests, ruff, hadolint, helm lint + kubeconform,<br/>terraform validate, promtool + rule tests, amtool,<br/>docker build, Trivy,<br/>kind e2e, compose smoke test"]
         rel["release on v* tags:<br/>amd64 + arm64 image to GHCR, SBOM + provenance"]
     end
 ```
@@ -49,7 +52,7 @@ flowchart LR
 | --- | --- | --- |
 | **Probe** | [`probe/`](probe) | Python 3.11+ **stdlib only**: HTTP(S) checks with status, latency, TLS days-to-expiry (via `ssl`) and keyword checks; a hand-written Prometheus exposition (HELP/TYPE, histogram buckets, gauges, counters); `/healthz`, `/readyz` (ready after the first round); JSON status on `/`; env-var config; structured JSON logs; graceful SIGTERM shutdown. 46 unit tests against local fake HTTP/HTTPS servers, no real network. |
 | **Container** | [`Dockerfile`](Dockerfile) | Multi-stage build (unit tests run in the build stage), `python:3.12-slim`, numeric non-root user `10001`, `HEALTHCHECK` without curl. |
-| **Local stack** | [`docker-compose.yml`](docker-compose.yml), [`deploy/prometheus`](deploy/prometheus), [`deploy/grafana`](deploy/grafana) | Probe + Prometheus (scrape config + alert rules) + Grafana (provisioned datasource + dashboard: uptime %, latency p50/p95, cert days left, up/down timeline). |
+| **Local stack** | [`docker-compose.yml`](docker-compose.yml), [`deploy/prometheus`](deploy/prometheus), [`deploy/alertmanager`](deploy/alertmanager), [`deploy/grafana`](deploy/grafana) | Probe + Prometheus (scrape config + alert rules with `promtool` unit tests) + Alertmanager (grouping, one route, a receiver ready for email/Slack/Telegram) + Grafana (provisioned datasource + dashboard: uptime %, latency p50/p95, cert days left, up/down timeline). |
 | **Kubernetes** | [`deploy/helm/fleetwatch`](deploy/helm/fleetwatch) | Deployment, Service, ConfigMap of targets, liveness/readiness probes, `runAsNonRoot` + `readOnlyRootFilesystem` + drop ALL capabilities + seccomp, resources, NetworkPolicy (ingress 8080, egress DNS + 80/443 only), optional ServiceMonitor, `values.schema.json` that rejects insecure overrides. |
 | **IaC** | [`deploy/terraform`](deploy/terraform) | Terraform module deploying the chart with the `helm` provider, typed + validated variables and useful outputs. |
 | **CI/CD** | [`.github/workflows`](.github/workflows) | Lint, test, build, scan, a real **kind** cluster e2e and a Compose smoke test on every push/PR; tagged releases push a multi-arch image with SBOM and provenance to GHCR. |
@@ -66,7 +69,7 @@ curl localhost:8080/metrics
 python -m unittest discover -s tests -t .     # the test suite
 ```
 
-### Docker Compose: probe + Prometheus + Grafana
+### Docker Compose: probe + Prometheus + Alertmanager + Grafana
 
 ```bash
 docker compose up -d --build
@@ -76,6 +79,7 @@ docker compose up -d --build
 | --- | --- |
 | http://localhost:8080/ | probe JSON status (`/metrics`, `/healthz`, `/readyz`) |
 | http://localhost:9090/alerts | Prometheus with the FleetWatch alert rules |
+| http://localhost:9093/ | Alertmanager (grouped alerts, silences) |
 | http://localhost:3000/ | Grafana "FleetWatch" dashboard (anonymous read-only) |
 
 Edit [`targets.yaml`](targets.yaml) to change the sites, then `docker compose restart probe`.
@@ -138,15 +142,69 @@ Deployed from this repo by Cloudflare's Git integration: see
 | `fleetwatch_probe_last_check_timestamp_seconds` | gauge | `target` |
 | `fleetwatch_probe_rounds_total`, `fleetwatch_probe_round_duration_seconds`, `fleetwatch_probe_targets`, `fleetwatch_probe_build_info` | counter / gauges | |
 
-## Alert rules
+## Alerts
 
-Defined in [`deploy/prometheus/alerts.yml`](deploy/prometheus/alerts.yml), checked by `promtool` in CI.
+```mermaid
+flowchart LR
+    probe["probe /metrics"] --> prom["Prometheus<br/>alert rules"]
+    prom -- "firing + resolved" --> am["Alertmanager<br/>group by alertname, target"]
+    am --> recv["receiver: default<br/>(no notifier until you add one)"]
+```
+
+Rules are defined in [`deploy/prometheus/alerts.yml`](deploy/prometheus/alerts.yml), checked by
+`promtool check rules` and unit-tested by `promtool test rules` in CI.
 
 | Alert | Expression | For | Severity |
 | --- | --- | --- | --- |
 | `FleetWatchTargetDown` | `fleetwatch_probe_up == 0` | 2m | critical |
 | `FleetWatchHighLatency` | `histogram_quantile(0.95, sum by (target, le) (rate(fleetwatch_probe_duration_seconds_bucket[5m]))) > 2` | 10m | warning |
 | `FleetWatchCertExpiringSoon` | `fleetwatch_probe_tls_cert_expiry_days < 14` | 15m | warning |
+
+### Alert-rule unit tests
+
+[`deploy/prometheus/tests/`](deploy/prometheus/tests) feeds synthetic series to the
+rules and asserts exactly which alerts fire, with which labels and annotations:
+
+| Test file | Covers |
+| --- | --- |
+| `target_down_test.yml` | a site down from t=0 is still pending at 1m and 1m59s and fires at 2m (and 5m) for that site only; a healthy site never fires; a 1m45s outage that recovers never fires |
+| `high_latency_test.yml` | a site whose checks all take 2.5 to 5 s (p95 = 4.875 s) is pending at 5m and 9m and fires by 12m, with the value in the annotation; a site under 1 s never fires |
+| `cert_expiry_test.yml` | a cert with 10.5 days left is pending at 10m and 14m59s and fires at 15m; exactly 14 days and 60 days never fire |
+
+```bash
+promtool test rules deploy/prometheus/tests/*_test.yml
+```
+
+### Alertmanager
+
+Prometheus sends alerts to Alertmanager (`alerting:` in
+[`prometheus.yml`](deploy/prometheus/prometheus.yml)). The config in
+[`deploy/alertmanager/alertmanager.yml`](deploy/alertmanager/alertmanager.yml) has one
+route that groups by `alertname` and `target` (wait 30s, regroup every 5m, repeat every 4h)
+into a receiver called `default`. That receiver has **no notifier**, so the repo holds no
+secrets: alerts are visible at http://localhost:9093 and nothing is sent. CI runs
+`amtool check-config` on it, and the compose smoke test checks that Alertmanager is ready
+and that Prometheus lists it in `/api/v1/alertmanagers`.
+
+#### Plug in email, Slack or Telegram
+
+1. Put the secret in a file under `deploy/alertmanager/secrets/` (git-ignored; the folder
+   is mounted read-only at `/etc/alertmanager/secrets`). Alertmanager runs as `nobody`,
+   so the file must be world-readable (`chmod 644`).
+2. Add the matching block under the `default` receiver (the commented examples in
+   `alertmanager.yml` are ready to uncomment):
+
+   | Channel | Block | Secret file |
+   | --- | --- | --- |
+   | Email | `email_configs` with `to`, `from`, `smarthost`, `auth_username` | `auth_password_file` |
+   | Slack | `slack_configs` with `channel` | `api_url_file` (incoming webhook URL) |
+   | Telegram | `telegram_configs` with `chat_id` | `bot_token_file` (token from @BotFather) |
+
+3. Check and reload:
+   ```bash
+   docker compose exec alertmanager amtool check-config /etc/alertmanager/alertmanager.yml
+   docker compose restart alertmanager
+   ```
 
 ## CI
 
@@ -157,11 +215,11 @@ Defined in [`deploy/prometheus/alerts.yml`](deploy/prometheus/alerts.yml), check
 | Lint Dockerfile | hadolint |
 | Helm | `helm lint --strict`, `helm template` piped into `kubeconform -strict` (incl. the ServiceMonitor CRD schema), schema rejects insecure values |
 | Terraform | `terraform fmt -check`, `terraform validate` |
-| Prometheus | `promtool check config` and `promtool check rules` |
+| Prometheus + Alertmanager | `promtool check config`, `promtool check rules`, `promtool test rules` (alert-rule unit tests), `amtool check-config` |
 | Worker | `node --test` |
 | Docker | image build, non-root + healthcheck check, Trivy scan (report only, shown in the job summary) |
 | E2E on kind | builds the image, loads it into a kind cluster, `helm install --wait`, port-forward, asserts `/healthz`, `/readyz` and the metric families on `/metrics` |
-| Compose smoke test | `docker compose up`, waits until Prometheus reports `up{job="fleetwatch-probe"} == 1`, checks the alert rules and the Grafana dashboard |
+| Compose smoke test | `docker compose up`, waits until Prometheus reports `up{job="fleetwatch-probe"} == 1`, checks the alert rules, that Alertmanager is ready with its config and listed in Prometheus `/api/v1/alertmanagers`, and the Grafana dashboard |
 
 `release.yml` runs only on `v*` tags: QEMU + buildx build `linux/amd64` and
 `linux/arm64`, push to `ghcr.io/naniiic137/fleetwatch` with `sbom: true` and
@@ -207,9 +265,10 @@ costs nothing.
 ```text
 probe/                  Python probe (fleetwatch_probe/) and its tests
 Dockerfile              multi-stage image for the probe
-docker-compose.yml      probe + Prometheus + Grafana
+docker-compose.yml      probe + Prometheus + Alertmanager + Grafana
 targets.yaml            the sites to watch (shared by probe, chart and Worker)
-deploy/prometheus/      scrape config + alert rules
+deploy/prometheus/      scrape config + alert rules + rule unit tests (tests/)
+deploy/alertmanager/    Alertmanager route + receiver
 deploy/grafana/         datasource + dashboard provisioning
 deploy/helm/fleetwatch/ Helm chart
 deploy/terraform/       Terraform module (helm provider)

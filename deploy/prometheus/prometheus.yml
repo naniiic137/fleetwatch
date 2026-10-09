@@ -10,6 +10,12 @@ global:
 rule_files:
   - alerts.yml
 
+# Firing alerts go to Alertmanager (deploy/alertmanager/alertmanager.yml).
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
 scrape_configs:
   - job_name: fleetwatch-probe
     metrics_path: /metrics

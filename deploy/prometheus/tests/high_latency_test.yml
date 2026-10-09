@@ -1,0 +1,53 @@
+# Unit tests for FleetWatchHighLatency (p95 over 5m > 2s, for: 10m).
+# Run with: promtool test rules deploy/prometheus/tests/*_test.yml
+
+rule_files:
+  - ../alerts.yml
+
+evaluation_interval: 15s
+
+tests:
+  - name: p95 above 2s for 10 minutes fires, a fast site does not
+    interval: 15s
+    input_series:
+      # slow-site: 2 checks per 15 s, every one between 2.5 s and 5 s.
+      # p95 = 2.5 + (5 - 2.5) * 0.95 = 4.875 s.
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="slow-site", le="1"}'
+        values: '0x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="slow-site", le="2.5"}'
+        values: '0x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="slow-site", le="5"}'
+        values: '0+2x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="slow-site", le="10"}'
+        values: '0+2x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="slow-site", le="+Inf"}'
+        values: '0+2x60'
+      # fast-site: every check under 1 s, so p95 < 1 s.
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="fast-site", le="1"}'
+        values: '0+2x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="fast-site", le="2.5"}'
+        values: '0+2x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="fast-site", le="5"}'
+        values: '0+2x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="fast-site", le="10"}'
+        values: '0+2x60'
+      - series: 'fleetwatch_probe_duration_seconds_bucket{target="fast-site", le="+Inf"}'
+        values: '0+2x60'
+    alert_rule_test:
+      # Slow for less than 10 minutes: pending only.
+      - eval_time: 5m
+        alertname: FleetWatchHighLatency
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: FleetWatchHighLatency
+        exp_alerts: []
+      # Slow for more than 10 minutes: fires for slow-site only.
+      - eval_time: 12m
+        alertname: FleetWatchHighLatency
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              target: slow-site
+            exp_annotations:
+              summary: "slow-site is slow"
+              description: "p95 response time of slow-site has been above 2s for 10 minutes (currently 4.875s)."

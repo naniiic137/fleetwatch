@@ -1,0 +1,64 @@
+# Unit tests for FleetWatchTargetDown (fleetwatch_probe_up == 0, for: 2m).
+# Run with: promtool test rules deploy/prometheus/tests/*_test.yml
+
+rule_files:
+  - ../alerts.yml
+
+evaluation_interval: 15s
+
+tests:
+  - name: site down for 2 minutes fires, and not a moment before
+    interval: 15s
+    input_series:
+      # Down from t=0 for 5 minutes.
+      - series: 'fleetwatch_probe_up{target="down-site", url="https://down.example.test/"}'
+        values: '0x20'
+      # Healthy the whole time.
+      - series: 'fleetwatch_probe_up{target="healthy-site", url="https://ok.example.test/"}'
+        values: '1x20'
+    alert_rule_test:
+      # Pending, not firing yet.
+      - eval_time: 1m
+        alertname: FleetWatchTargetDown
+        exp_alerts: []
+      - eval_time: 1m59s
+        alertname: FleetWatchTargetDown
+        exp_alerts: []
+      # 2 minutes down: fires, for the down site only.
+      - eval_time: 2m
+        alertname: FleetWatchTargetDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              target: down-site
+              url: https://down.example.test/
+            exp_annotations:
+              summary: "down-site is down"
+              description: "down-site (https://down.example.test/) has failed every check for at least 2 minutes (wrong status, missing keyword, TLS or network error)."
+      - eval_time: 5m
+        alertname: FleetWatchTargetDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              target: down-site
+              url: https://down.example.test/
+            exp_annotations:
+              summary: "down-site is down"
+              description: "down-site (https://down.example.test/) has failed every check for at least 2 minutes (wrong status, missing keyword, TLS or network error)."
+
+  - name: a short outage that recovers before 2 minutes never fires
+    interval: 15s
+    input_series:
+      # Down for 1m45s (t=0..1m45s), then back up.
+      - series: 'fleetwatch_probe_up{target="flaky-site", url="https://flaky.example.test/"}'
+        values: '0x7 1x20'
+    alert_rule_test:
+      - eval_time: 1m45s
+        alertname: FleetWatchTargetDown
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: FleetWatchTargetDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: FleetWatchTargetDown
+        exp_alerts: []

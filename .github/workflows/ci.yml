@@ -18,6 +18,7 @@ env:
   HELM_VERSION: v3.16.4
   KUBECONFORM_VERSION: v0.6.7
   PROMETHEUS_IMAGE: prom/prometheus:v3.5.0
+  ALERTMANAGER_IMAGE: prom/alertmanager:v0.28.1
   TRIVY_IMAGE: aquasec/trivy:0.58.1
 
 jobs:
@@ -110,7 +111,7 @@ jobs:
         run: terraform validate
 
   promtool:
-    name: Prometheus config + rules (promtool)
+    name: Prometheus + Alertmanager config, rules and rule tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -122,6 +123,17 @@ jobs:
         run: |
           docker run --rm --entrypoint promtool -v "$PWD/deploy/prometheus:/etc/prometheus:ro" \
             "$PROMETHEUS_IMAGE" check rules /etc/prometheus/alerts.yml
+      - name: promtool test rules (alert-rule unit tests)
+        run: |
+          docker run --rm --entrypoint promtool -v "$PWD/deploy/prometheus:/etc/prometheus:ro" \
+            "$PROMETHEUS_IMAGE" test rules \
+              /etc/prometheus/tests/target_down_test.yml \
+              /etc/prometheus/tests/high_latency_test.yml \
+              /etc/prometheus/tests/cert_expiry_test.yml
+      - name: amtool check-config
+        run: |
+          docker run --rm --entrypoint amtool -v "$PWD/deploy/alertmanager:/etc/alertmanager:ro" \
+            "$ALERTMANAGER_IMAGE" check-config /etc/alertmanager/alertmanager.yml
 
   worker-tests:
     name: Worker tests (node --test)
@@ -254,6 +266,25 @@ jobs:
           for alert in FleetWatchTargetDown FleetWatchHighLatency FleetWatchCertExpiringSoon; do
             echo "$rules" | grep -q "\"$alert\"" || { echo "missing alert $alert"; exit 1; }
           done
+      - name: Alertmanager is up with the FleetWatch config
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:9093/-/ready > /dev/null; then echo "Alertmanager is ready"; ok=1; break; fi
+            sleep 3
+          done
+          test "${ok:-0}" = "1"
+          curl -sf http://127.0.0.1:9093/api/v2/status \
+            | python3 -c 'import json,sys; s=json.load(sys.stdin); print("Alertmanager", s["versionInfo"]["version"]); assert "receiver: default" in s["config"]["original"]'
+      - name: Prometheus sees Alertmanager (/api/v1/alertmanagers)
+        run: |
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:9090/api/v1/alertmanagers \
+                | python3 -c 'import json,sys; a=json.load(sys.stdin)["data"]["activeAlertmanagers"]; print(a); sys.exit(0 if any("alertmanager:9093" in x["url"] for x in a) else 1)'; then
+              echo "Prometheus has Alertmanager as an active alertmanager"; ok=1; break
+            fi
+            sleep 3
+          done
+          test "${ok:-0}" = "1"
       - name: Grafana is up with the provisioned dashboard
         run: |
           for i in $(seq 1 40); do

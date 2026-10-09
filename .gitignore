@@ -12,3 +12,4 @@ node_modules/
 crash.log
 metrics.txt
 trivy.txt
+deploy/alertmanager/secrets/
