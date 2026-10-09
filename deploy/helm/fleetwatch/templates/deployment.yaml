@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fleetwatch.fullname" . }}
+  labels:
+    {{- include "fleetwatch.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "fleetwatch.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/targets: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "fleetwatch.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fleetwatch.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: probe
+          image: {{ include "fleetwatch.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: FW_TARGETS_FILE
+              value: /etc/fleetwatch/targets.yaml
+            - name: FW_PORT
+              value: "8080"
+            - name: FW_INTERVAL_SECONDS
+              value: {{ .Values.config.intervalSeconds | quote }}
+            - name: FW_TIMEOUT_SECONDS
+              value: {{ .Values.config.timeoutSeconds | quote }}
+            - name: FW_CONCURRENCY
+              value: {{ .Values.config.concurrency | quote }}
+            - name: FW_LOG_LEVEL
+              value: {{ .Values.config.logLevel | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: targets
+              mountPath: /etc/fleetwatch
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: targets
+          configMap:
+            name: {{ include "fleetwatch.fullname" . }}-targets
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,56 @@
+# FleetWatch targets: the single list of sites to watch.
+#
+# Used by the probe (docker compose mounts this file), mirrored in the Helm
+# chart's values.yaml and in worker/src/targets.js (a worker test checks that
+# the Worker list matches this file).
+#
+# Supported YAML subset: comments, a top-level "targets:" list of mappings,
+# and plain, 'single' or "double" quoted scalars.
+#
+# Fields:
+#   name            short label used in metrics and on the status page
+#   url             http:// or https:// URL
+#   expect_status   expected HTTP status code (default 200; redirects are not followed)
+#   expect_keyword  optional text that must appear in the first 1 MiB of the body
+
+targets:
+  - name: portfolio
+    url: https://www.hamzabenismail.cloud-ip.cc
+    expect_status: 200
+    expect_keyword: "Hamza Ben Ismail"
+  - name: chkobba
+    url: https://chkooba.pages.dev
+    expect_status: 200
+    expect_keyword: "Chkobba"
+  - name: kalak
+    url: https://kalak-aar.pages.dev
+    expect_status: 200
+    expect_keyword: "Kalak"
+  - name: fog-chess
+    url: https://fog-chess-erb.pages.dev
+    expect_status: 200
+    expect_keyword: "Fog Chess"
+  - name: custom-checkers
+    url: https://custom-checkers.pages.dev
+    expect_status: 200
+    expect_keyword: "Custom Checkers"
+  - name: chess-cipher
+    url: https://chesscipher.pages.dev
+    expect_status: 200
+    expect_keyword: "Chess Cipher"
+  - name: cipher-chat
+    url: https://cipher-chat.pages.dev
+    expect_status: 200
+    expect_keyword: "CipherChat"
+  - name: jobfit-ai
+    url: https://jobfit-ai-hbi.pages.dev
+    expect_status: 200
+    expect_keyword: "JobFit AI"
+  - name: readme-glow
+    url: https://readme-glow.pages.dev
+    expect_status: 200
+    expect_keyword: "ReadmeGlow"
+  - name: picopulse
+    url: https://picopulse.pages.dev
+    expect_status: 200
+    expect_keyword: "PicoPulse"

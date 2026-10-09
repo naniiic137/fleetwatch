@@ -1,0 +1,6 @@
+# Only the probe and the targets list go into the build context.
+*
+!probe/
+!targets.yaml
+**/__pycache__
+**/*.pyc

@@ -1,0 +1,23 @@
+{
+  // Cloudflare Worker config. Deployed by Cloudflare's Git integration
+  // (root directory "worker", deploy command "npx wrangler deploy").
+  // The Worker name in the dashboard must match "name" below.
+  "name": "fleetwatch",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+
+  // Cron Trigger (UTC): every 5 minutes = 288 runs/day = 288 KV writes/day.
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+
+  // Workers KV: holds the rolling 7-day history as ONE key ("state").
+  // Create the namespace in the dashboard (Workers KV > Create instance) and
+  // paste its ID here. See docs/DEPLOY-CLOUDFLARE.md.
+  "kv_namespaces": [
+    {
+      "binding": "FW_KV",
+      "id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+    }
+  ]
+}

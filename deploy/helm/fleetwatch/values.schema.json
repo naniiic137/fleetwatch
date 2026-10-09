@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "fleetwatch chart values",
+  "type": "object",
+  "required": ["image", "config", "targets", "service", "securityContext", "podSecurityContext"],
+  "properties": {
+    "image": {
+      "type": "object",
+      "required": ["repository", "pullPolicy"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string" },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      },
+      "additionalProperties": false
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": { "name": { "type": "string" } }
+      }
+    },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "replicaCount": { "type": "integer", "minimum": 0 },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": { "type": "boolean" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "config": {
+      "type": "object",
+      "required": ["intervalSeconds", "timeoutSeconds"],
+      "properties": {
+        "intervalSeconds": { "type": "number", "minimum": 1 },
+        "timeoutSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "concurrency": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "logLevel": { "type": "string", "enum": ["DEBUG", "INFO", "WARNING", "ERROR"] }
+      },
+      "additionalProperties": false
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "url"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$" },
+          "url": { "type": "string", "pattern": "^https?://[^\\s/]+" },
+          "expect_status": { "type": "integer", "minimum": 100, "maximum": 599 },
+          "expect_keyword": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "service": {
+      "type": "object",
+      "required": ["type", "port"],
+      "properties": {
+        "type": { "type": "string", "enum": ["ClusterIP", "NodePort", "LoadBalancer"] },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      },
+      "additionalProperties": false
+    },
+    "podAnnotations": { "type": "object" },
+    "podLabels": { "type": "object" },
+    "podSecurityContext": {
+      "type": "object",
+      "required": ["runAsNonRoot"],
+      "properties": {
+        "runAsNonRoot": { "const": true }
+      }
+    },
+    "securityContext": {
+      "type": "object",
+      "required": ["runAsNonRoot", "readOnlyRootFilesystem", "allowPrivilegeEscalation", "capabilities"],
+      "properties": {
+        "runAsNonRoot": { "const": true },
+        "readOnlyRootFilesystem": { "const": true },
+        "allowPrivilegeEscalation": { "const": false },
+        "capabilities": {
+          "type": "object",
+          "required": ["drop"],
+          "properties": {
+            "drop": { "type": "array", "contains": { "const": "ALL" } }
+          }
+        }
+      }
+    },
+    "resources": { "type": "object" },
+    "livenessProbe": { "type": "object" },
+    "readinessProbe": { "type": "object" },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "ingressFrom": { "type": "array", "items": { "type": "object" } },
+        "egressPorts": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1, "maximum": 65535 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "serviceMonitor": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "interval": { "type": "string" },
+        "scrapeTimeout": { "type": "string" },
+        "labels": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "nodeSelector": { "type": "object" },
+    "tolerations": { "type": "array" },
+    "affinity": { "type": "object" },
+    "global": { "type": "object" }
+  },
+  "additionalProperties": false
+}

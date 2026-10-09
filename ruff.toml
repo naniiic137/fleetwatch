@@ -1,0 +1,8 @@
+# Ruff runs in CI only (pip install ruff in GitHub Actions).
+target-version = "py311"
+line-length = 100
+src = ["probe"]
+
+[lint]
+# pycodestyle errors/warnings, pyflakes, bugbear, pyupgrade
+select = ["E", "W", "F", "B", "UP"]

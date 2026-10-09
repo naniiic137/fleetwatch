@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fleetwatch.fullname" . }}-targets
+  labels:
+    {{- include "fleetwatch.labels" . | nindent 4 }}
+data:
+  targets.yaml: |
+    # Rendered by Helm from .Values.targets
+    targets:
+    {{- range .Values.targets }}
+      - name: {{ .name | quote }}
+        url: {{ .url | quote }}
+        expect_status: {{ get . "expect_status" | default 200 | int }}
+        {{- with get . "expect_keyword" }}
+        expect_keyword: {{ . | quote }}
+        {{- end }}
+    {{- end }}

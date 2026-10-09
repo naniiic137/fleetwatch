@@ -1,0 +1,139 @@
+# Default values for the fleetwatch chart. values.schema.json validates them.
+
+image:
+  repository: ghcr.io/naniiic137/fleetwatch
+  # Defaults to the chart's appVersion when empty.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  name: ""
+
+# Probe settings, passed to the container as FW_* environment variables.
+config:
+  intervalSeconds: 30
+  timeoutSeconds: 10
+  concurrency: 8
+  logLevel: INFO
+
+# Sites to check. Rendered into a ConfigMap mounted at /etc/fleetwatch/targets.yaml.
+# Same list as targets.yaml at the repository root.
+targets:
+  - name: portfolio
+    url: https://www.hamzabenismail.cloud-ip.cc
+    expect_status: 200
+    expect_keyword: "Hamza Ben Ismail"
+  - name: chkobba
+    url: https://chkooba.pages.dev
+    expect_status: 200
+    expect_keyword: "Chkobba"
+  - name: kalak
+    url: https://kalak-aar.pages.dev
+    expect_status: 200
+    expect_keyword: "Kalak"
+  - name: fog-chess
+    url: https://fog-chess-erb.pages.dev
+    expect_status: 200
+    expect_keyword: "Fog Chess"
+  - name: custom-checkers
+    url: https://custom-checkers.pages.dev
+    expect_status: 200
+    expect_keyword: "Custom Checkers"
+  - name: chess-cipher
+    url: https://chesscipher.pages.dev
+    expect_status: 200
+    expect_keyword: "Chess Cipher"
+  - name: cipher-chat
+    url: https://cipher-chat.pages.dev
+    expect_status: 200
+    expect_keyword: "CipherChat"
+  - name: jobfit-ai
+    url: https://jobfit-ai-hbi.pages.dev
+    expect_status: 200
+    expect_keyword: "JobFit AI"
+  - name: readme-glow
+    url: https://readme-glow.pages.dev
+    expect_status: 200
+    expect_keyword: "ReadmeGlow"
+  - name: picopulse
+    url: https://picopulse.pages.dev
+    expect_status: 200
+    expect_keyword: "PicoPulse"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 48Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 15
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Ready only after the first probe round has finished.
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+  initialDelaySeconds: 2
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+networkPolicy:
+  enabled: true
+  # Extra ingress peers allowed to reach port 8080 (e.g. the Prometheus namespace).
+  # Empty = any pod may scrape the probe.
+  ingressFrom: []
+  # Egress is limited to DNS plus these TCP ports (the probe only makes HTTP(S) calls).
+  egressPorts:
+    - 80
+    - 443
+
+# Requires the Prometheus Operator CRDs (monitoring.coreos.com/v1).
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

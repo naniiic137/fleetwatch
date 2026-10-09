@@ -1,0 +1,12 @@
+FleetWatch probe is installed as {{ include "fleetwatch.fullname" . }} in namespace {{ .Release.Namespace }}.
+It checks {{ len .Values.targets }} target(s) every {{ .Values.config.intervalSeconds }}s.
+
+Look at it locally:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "fleetwatch.fullname" . }} 8080:{{ .Values.service.port }}
+  curl http://127.0.0.1:8080/          # JSON status
+  curl http://127.0.0.1:8080/metrics   # Prometheus metrics
+{{- if .Values.serviceMonitor.enabled }}
+
+A ServiceMonitor was created, so the Prometheus Operator will scrape it.
+{{- end }}

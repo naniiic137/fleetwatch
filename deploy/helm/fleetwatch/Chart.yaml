@@ -1,0 +1,16 @@
+apiVersion: v2
+name: fleetwatch
+description: FleetWatch probe - HTTP uptime, latency and TLS expiry checks exposed as Prometheus metrics.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/naniiic137/fleetwatch
+sources:
+  - https://github.com/naniiic137/fleetwatch
+keywords:
+  - monitoring
+  - prometheus
+  - uptime
+maintainers:
+  - name: Hamza Ben Ismail
+    url: https://github.com/naniiic137

@@ -1,0 +1,21 @@
+# Prometheus config for the docker compose stack.
+# Checked in CI with: promtool check config prometheus.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    stack: fleetwatch
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: fleetwatch-probe
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["probe:8080"]
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
