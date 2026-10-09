@@ -208,6 +208,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Docker Hub pulls through mirror.gcr.io (Docker Hub rate-limits runners)
+        run: |
+          cfg=/etc/docker/daemon.json
+          if [ ! -s "$cfg" ]; then echo '{}' | sudo tee "$cfg" > /dev/null; fi
+          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$cfg" | sudo tee "$cfg.new" > /dev/null
+          sudo mv "$cfg.new" "$cfg"
+          sudo systemctl restart docker
+          docker info --format 'registry mirrors: {{.RegistryConfig.Mirrors}}'
+          docker pull python:3.12-slim
       - name: docker build (unit tests run inside the build stage)
         run: docker build -t fleetwatch-probe:ci .
       - name: Image runs as non-root and passes its HEALTHCHECK command
@@ -243,6 +252,15 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Docker Hub pulls through mirror.gcr.io (Docker Hub rate-limits runners)
+        run: |
+          cfg=/etc/docker/daemon.json
+          if [ ! -s "$cfg" ]; then echo '{}' | sudo tee "$cfg" > /dev/null; fi
+          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$cfg" | sudo tee "$cfg.new" > /dev/null
+          sudo mv "$cfg.new" "$cfg"
+          sudo systemctl restart docker
+          docker info --format 'registry mirrors: {{.RegistryConfig.Mirrors}}'
+          docker pull python:3.12-slim
       - name: Build image
         run: docker build -t fleetwatch-probe:e2e .
       - uses: helm/kind-action@v1
@@ -334,6 +352,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Docker Hub pulls through mirror.gcr.io (Docker Hub rate-limits runners)
+        run: |
+          cfg=/etc/docker/daemon.json
+          if [ ! -s "$cfg" ]; then echo '{}' | sudo tee "$cfg" > /dev/null; fi
+          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$cfg" | sudo tee "$cfg.new" > /dev/null
+          sudo mv "$cfg.new" "$cfg"
+          sudo systemctl restart docker
+          docker info --format 'registry mirrors: {{.RegistryConfig.Mirrors}}'
+          docker pull python:3.12-slim
       - name: docker compose up
         run: docker compose up -d --build
       - name: Prometheus scrapes the probe (up == 1)
