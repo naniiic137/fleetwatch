@@ -22,6 +22,8 @@ env:
   PROMETHEUS_IMAGE: quay.io/prometheus/prometheus:v3.5.0
   ALERTMANAGER_IMAGE: quay.io/prometheus/alertmanager:v0.28.1
   TRIVY_IMAGE: aquasec/trivy:0.58.1
+  KIND_VERSION: v0.27.0
+  KIND_NODE_IMAGE: kindest/node:v1.32.2
 
 jobs:
   probe-tests:
@@ -208,15 +210,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Docker Hub pulls through mirror.gcr.io (Docker Hub rate-limits runners)
+      - name: Pull images from quay.io / mirror.gcr.io (Docker Hub rate-limits runners)
         run: |
-          cfg=/etc/docker/daemon.json
-          if [ ! -s "$cfg" ]; then echo '{}' | sudo tee "$cfg" > /dev/null; fi
-          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$cfg" | sudo tee "$cfg.new" > /dev/null
-          sudo mv "$cfg.new" "$cfg"
-          sudo systemctl restart docker
-          docker info --format 'registry mirrors: {{.RegistryConfig.Mirrors}}'
-          docker pull python:3.12-slim
+          bash .github/scripts/pull-images.sh $(awk '/^FROM /{print $2}' Dockerfile | sort -u)
+          bash .github/scripts/pull-images.sh "$TRIVY_IMAGE" || echo "Trivy image not pulled (the scan is report-only)"
       - name: docker build (unit tests run inside the build stage)
         run: docker build -t fleetwatch-probe:ci .
       - name: Image runs as non-root and passes its HEALTHCHECK command
@@ -252,20 +249,17 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Docker Hub pulls through mirror.gcr.io (Docker Hub rate-limits runners)
+      - name: Pull images from quay.io / mirror.gcr.io (Docker Hub rate-limits runners)
         run: |
-          cfg=/etc/docker/daemon.json
-          if [ ! -s "$cfg" ]; then echo '{}' | sudo tee "$cfg" > /dev/null; fi
-          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$cfg" | sudo tee "$cfg.new" > /dev/null
-          sudo mv "$cfg.new" "$cfg"
-          sudo systemctl restart docker
-          docker info --format 'registry mirrors: {{.RegistryConfig.Mirrors}}'
-          docker pull python:3.12-slim
+          bash .github/scripts/pull-images.sh $(awk '/^FROM /{print $2}' Dockerfile | sort -u) "$KIND_NODE_IMAGE"
       - name: Build image
         run: docker build -t fleetwatch-probe:e2e .
       - uses: helm/kind-action@v1
         with:
           cluster_name: fleetwatch
+          # Pinned so the node image is known and pulled above, not from Docker Hub.
+          version: ${{ env.KIND_VERSION }}
+          node_image: ${{ env.KIND_NODE_IMAGE }}
       - uses: azure/setup-helm@v4
         with:
           version: ${{ env.HELM_VERSION }}
@@ -352,15 +346,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Docker Hub pulls through mirror.gcr.io (Docker Hub rate-limits runners)
+      - name: Pull images from quay.io / mirror.gcr.io (Docker Hub rate-limits runners)
         run: |
-          cfg=/etc/docker/daemon.json
-          if [ ! -s "$cfg" ]; then echo '{}' | sudo tee "$cfg" > /dev/null; fi
-          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$cfg" | sudo tee "$cfg.new" > /dev/null
-          sudo mv "$cfg.new" "$cfg"
-          sudo systemctl restart docker
-          docker info --format 'registry mirrors: {{.RegistryConfig.Mirrors}}'
-          docker pull python:3.12-slim
+          bash .github/scripts/pull-images.sh $(awk '/^FROM /{print $2}' Dockerfile | sort -u) \
+            $(docker compose config --images | grep -v '^fleetwatch-probe')
       - name: docker compose up
         run: docker compose up -d --build
       - name: Prometheus scrapes the probe (up == 1)
