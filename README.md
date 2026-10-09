@@ -135,7 +135,7 @@ and answer `/-/ready`.
 | `serviceMonitor.enabled` / `interval` / `scrapeTimeout` / `labels` | `false` / `30s` / `10s` / `{}` | ServiceMonitor for the Prometheus Operator |
 | `prometheusRule.enabled` / `labels` | `false` / `{}` | PrometheusRule with the 3 alerts of `deploy/prometheus/alerts.yml` (add the labels your `ruleSelector` matches) |
 | `alertmanager.enabled` | `false` | deploy Alertmanager (Deployment, Service, ConfigMap, NetworkPolicy) |
-| `alertmanager.image.repository` / `tag` / `pullPolicy` | `prom/alertmanager` / `v0.28.1` / `IfNotPresent` | same image as compose |
+| `alertmanager.image.repository` / `tag` / `pullPolicy` | `quay.io/prometheus/alertmanager` / `v0.28.1` / `IfNotPresent` | the image compose runs (`prom/alertmanager`), from the Prometheus project's registry |
 | `alertmanager.config` | `""` | full `alertmanager.yml` as a string; empty uses the compose config (receiver `default`, no notifier) |
 | `alertmanager.existingSecret` | `""` | Secret with notifier credentials, mounted read-only at `/etc/alertmanager/secrets` |
 | `alertmanager.service.type` / `port` | `ClusterIP` / `9093` | Alertmanager Service |

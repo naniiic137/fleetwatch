@@ -150,7 +150,9 @@ prometheusRule:
 alertmanager:
   enabled: false
   image:
-    repository: prom/alertmanager
+    # The image compose runs (prom/alertmanager), from the Prometheus project's own
+    # registry, which has no anonymous pull limit.
+    repository: quay.io/prometheus/alertmanager
     tag: v0.28.1
     pullPolicy: IfNotPresent
   # Full alertmanager.yml as a string. Empty = files/alertmanager.yml, which is the

@@ -17,8 +17,10 @@ concurrency:
 env:
   HELM_VERSION: v3.16.4
   KUBECONFORM_VERSION: v0.6.7
-  PROMETHEUS_IMAGE: prom/prometheus:v3.5.0
-  ALERTMANAGER_IMAGE: prom/alertmanager:v0.28.1
+  # quay.io is the Prometheus project's own registry: same images as Docker Hub,
+  # without the anonymous pull limit that runners hit (429 Too Many Requests).
+  PROMETHEUS_IMAGE: quay.io/prometheus/prometheus:v3.5.0
+  ALERTMANAGER_IMAGE: quay.io/prometheus/alertmanager:v0.28.1
   TRIVY_IMAGE: aquasec/trivy:0.58.1
 
 jobs:
