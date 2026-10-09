@@ -40,6 +40,17 @@ locals {
     serviceMonitor = {
       enabled = var.service_monitor_enabled
     }
+    prometheusRule = {
+      enabled = var.prometheus_rule_enabled
+    }
+    alertmanager = {
+      enabled        = var.alertmanager_enabled
+      config         = var.alertmanager_config
+      existingSecret = var.alertmanager_existing_secret
+      networkPolicy = {
+        enabled = var.network_policy_enabled
+      }
+    }
   }
 }
 

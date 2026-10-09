@@ -124,7 +124,7 @@ variable "targets" {
 }
 
 variable "network_policy_enabled" {
-  description = "Create the NetworkPolicy (ingress on 8080, egress DNS + 80/443 only)."
+  description = "Create the NetworkPolicies: probe (ingress 8080, egress DNS + 80/443) and, when enabled, Alertmanager (ingress 9093, egress DNS + 443/587)."
   type        = bool
   default     = true
 }
@@ -133,6 +133,35 @@ variable "service_monitor_enabled" {
   description = "Create a ServiceMonitor (needs the Prometheus Operator CRDs)."
   type        = bool
   default     = false
+}
+
+variable "prometheus_rule_enabled" {
+  description = "Create a PrometheusRule with the 3 FleetWatch alerts (needs the Prometheus Operator CRDs)."
+  type        = bool
+  default     = false
+}
+
+variable "alertmanager_enabled" {
+  description = "Deploy the chart's Alertmanager (same config as the compose stack)."
+  type        = bool
+  default     = false
+}
+
+variable "alertmanager_config" {
+  description = "Full alertmanager.yml as a string (for example read with file()). Empty uses the chart's default: one route into a receiver with no notifier."
+  type        = string
+  default     = ""
+}
+
+variable "alertmanager_existing_secret" {
+  description = "Name of an existing Secret with notifier credentials, mounted at /etc/alertmanager/secrets. Empty mounts nothing."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = can(regex("^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)?$", var.alertmanager_existing_secret))
+    error_message = "alertmanager_existing_secret must be empty or a valid Kubernetes Secret name."
+  }
 }
 
 variable "timeout_seconds_install" {

@@ -1,0 +1,43 @@
+# FleetWatch alert rules for the chart's PrometheusRule (prometheusRule.enabled=true).
+# Same rules as deploy/prometheus/alerts.yml (checked and unit-tested by promtool):
+# CI fails if the two files stop matching (comments aside).
+
+groups:
+  - name: fleetwatch
+    rules:
+      - alert: FleetWatchTargetDown
+        expr: fleetwatch_probe_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.target }} is down"
+          description: >-
+            {{ $labels.target }} ({{ $labels.url }}) has failed every check for
+            at least 2 minutes (wrong status, missing keyword, TLS or network error).
+
+      - alert: FleetWatchHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (target, le) (rate(fleetwatch_probe_duration_seconds_bucket[5m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.target }} is slow"
+          description: >-
+            p95 response time of {{ $labels.target }} has been above 2s for 10 minutes
+            (currently {{ $value | humanizeDuration }}).
+
+      - alert: FleetWatchCertExpiringSoon
+        expr: fleetwatch_probe_tls_cert_expiry_days < 14
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS certificate of {{ $labels.target }} expires soon"
+          description: >-
+            The certificate of {{ $labels.target }} expires in
+            {{ $value | printf "%.1f" }} days (threshold: 14 days).

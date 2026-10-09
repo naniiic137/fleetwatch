@@ -45,3 +45,31 @@ app.kubernetes.io/part-of: fleetwatch
 {{- define "fleetwatch.image" -}}
 {{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) }}
 {{- end }}
+
+{{/* Alertmanager: own name and selector, so the probe Service never selects its pods. */}}
+{{- define "fleetwatch.alertmanager.fullname" -}}
+{{- printf "%s-alertmanager" (include "fleetwatch.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "fleetwatch.alertmanager.selectorLabels" -}}
+app.kubernetes.io/name: {{ printf "%s-alertmanager" (include "fleetwatch.name" .) | trunc 63 | trimSuffix "-" }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: alertmanager
+{{- end }}
+
+{{- define "fleetwatch.alertmanager.labels" -}}
+helm.sh/chart: {{ include "fleetwatch.chart" . }}
+{{ include "fleetwatch.alertmanager.selectorLabels" . }}
+app.kubernetes.io/version: {{ .Values.alertmanager.image.tag | quote }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: fleetwatch
+{{- end }}
+
+{{/* alertmanager.yml: alertmanager.config when set, else files/alertmanager.yml (same as compose). */}}
+{{- define "fleetwatch.alertmanager.config" -}}
+{{- if .Values.alertmanager.config }}
+{{- .Values.alertmanager.config }}
+{{- else }}
+{{- .Files.Get "files/alertmanager.yml" }}
+{{- end }}
+{{- end }}

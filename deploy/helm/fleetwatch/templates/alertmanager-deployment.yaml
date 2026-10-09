@@ -1,0 +1,75 @@
+{{- if .Values.alertmanager.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fleetwatch.alertmanager.fullname" . }}
+  labels:
+    {{- include "fleetwatch.alertmanager.labels" . | nindent 4 }}
+spec:
+  # One instance, like the compose stack: the HA gossip cluster is turned off.
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "fleetwatch.alertmanager.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "fleetwatch.alertmanager.config" . | sha256sum }}
+      labels:
+        {{- include "fleetwatch.alertmanager.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "fleetwatch.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        {{- toYaml .Values.alertmanager.podSecurityContext | nindent 8 }}
+      containers:
+        - name: alertmanager
+          image: {{ printf "%s:%s" .Values.alertmanager.image.repository .Values.alertmanager.image.tag | quote }}
+          imagePullPolicy: {{ .Values.alertmanager.image.pullPolicy }}
+          args:
+            - --config.file=/etc/alertmanager/config/alertmanager.yml
+            - --storage.path=/alertmanager
+            - --web.listen-address=:9093
+            # Single instance: no HA gossip cluster.
+            - --cluster.listen-address=
+          securityContext:
+            {{- toYaml .Values.alertmanager.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 9093
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.alertmanager.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.alertmanager.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.alertmanager.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager/config
+              readOnly: true
+            # Silences and the notification log. The root filesystem stays read-only.
+            - name: data
+              mountPath: /alertmanager
+            {{- if .Values.alertmanager.existingSecret }}
+            # Notifier credentials, for the *_file settings (same path as compose).
+            - name: secrets
+              mountPath: /etc/alertmanager/secrets
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "fleetwatch.alertmanager.fullname" . }}
+        - name: data
+          emptyDir:
+            sizeLimit: 64Mi
+        {{- with .Values.alertmanager.existingSecret }}
+        - name: secrets
+          secret:
+            secretName: {{ . }}
+            defaultMode: 0440
+        {{- end }}
+{{- end }}

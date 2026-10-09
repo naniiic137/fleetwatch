@@ -1,0 +1,12 @@
+{{- if .Values.alertmanager.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fleetwatch.alertmanager.fullname" . }}
+  labels:
+    {{- include "fleetwatch.alertmanager.labels" . | nindent 4 }}
+data:
+  # alertmanager.config when set, else files/alertmanager.yml (the compose config).
+  alertmanager.yml: |
+    {{- include "fleetwatch.alertmanager.config" . | nindent 4 }}
+{{- end }}

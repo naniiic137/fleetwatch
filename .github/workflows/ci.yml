@@ -74,23 +74,77 @@ jobs:
         run: |
           helm lint --strict deploy/helm/fleetwatch
           helm lint --strict deploy/helm/fleetwatch --set serviceMonitor.enabled=true
-      - name: helm template | kubeconform (defaults)
+          helm lint --strict deploy/helm/fleetwatch --set alertmanager.enabled=true
+          helm lint --strict deploy/helm/fleetwatch --set alertmanager.enabled=true \
+            --set alertmanager.existingSecret=fleetwatch-notifiers \
+            --set serviceMonitor.enabled=true --set prometheusRule.enabled=true
+      - name: helm template | kubeconform (defaults, Alertmanager disabled)
+        run: |
+          helm template fleetwatch deploy/helm/fleetwatch --namespace fleetwatch > rendered.yaml
+          kubeconform -strict -summary -kubernetes-version 1.30.0 rendered.yaml
+          if grep -q 'app.kubernetes.io/component: alertmanager' rendered.yaml; then
+            echo "Alertmanager resources rendered although alertmanager.enabled=false"; exit 1
+          fi
+      - name: helm template | kubeconform (Alertmanager enabled, with a notifier Secret)
         run: |
           helm template fleetwatch deploy/helm/fleetwatch --namespace fleetwatch \
-            | kubeconform -strict -summary -kubernetes-version 1.30.0
-      - name: helm template | kubeconform (with ServiceMonitor CRD schema)
+              --set alertmanager.enabled=true --set alertmanager.existingSecret=fleetwatch-notifiers \
+            > rendered-am.yaml
+          kubeconform -strict -summary -kubernetes-version 1.30.0 rendered-am.yaml
+          for kind in ConfigMap Deployment Service NetworkPolicy; do
+            yq ea "select(.kind == \"$kind\" and .metadata.name == \"fleetwatch-alertmanager\") | .metadata.name" rendered-am.yaml \
+              | grep -qx fleetwatch-alertmanager || { echo "missing $kind fleetwatch-alertmanager"; exit 1; }
+          done
+          secret="$(yq ea 'select(.kind == "Deployment" and .metadata.name == "fleetwatch-alertmanager") | .spec.template.spec.volumes[] | select(.name == "secrets") | .secret.secretName' rendered-am.yaml)"
+          test "$secret" = "fleetwatch-notifiers"
+      - name: helm template | kubeconform (everything on, with ServiceMonitor + PrometheusRule CRD schemas)
         run: |
           helm template fleetwatch deploy/helm/fleetwatch --namespace fleetwatch \
-              --set serviceMonitor.enabled=true \
+              --set serviceMonitor.enabled=true --set prometheusRule.enabled=true \
+              --set alertmanager.enabled=true \
             | kubeconform -strict -summary -kubernetes-version 1.30.0 \
                 -schema-location default \
                 -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+      - name: Chart copies match deploy/ (alert rules + Alertmanager config)
+        run: |
+          set -o pipefail
+          # YAML -> JSON with sorted keys, so comments and key order do not matter.
+          norm() { yq -o=json 'sort_keys(..)' "$1" > "$2"; test -s "$2"; }
+          mkdir -p chart-out
+          helm template fleetwatch deploy/helm/fleetwatch --set prometheusRule.enabled=true \
+              --show-only templates/prometheusrule.yaml | yq '.spec' > chart-out/alerts.yml
+          helm template fleetwatch deploy/helm/fleetwatch --set alertmanager.enabled=true \
+              --show-only templates/alertmanager-configmap.yaml | yq '.data["alertmanager.yml"]' > chart-out/alertmanager.yml
+          norm deploy/prometheus/alerts.yml chart-out/rules-deploy.json
+          norm chart-out/alerts.yml chart-out/rules-chart.json
+          norm deploy/alertmanager/alertmanager.yml chart-out/am-deploy.json
+          norm chart-out/alertmanager.yml chart-out/am-chart.json
+          grep -q FleetWatchCertExpiringSoon chart-out/rules-chart.json
+          grep -q '"receiver": "default"' chart-out/am-chart.json
+          diff chart-out/rules-deploy.json chart-out/rules-chart.json
+          diff chart-out/am-deploy.json chart-out/am-chart.json
+          echo "PrometheusRule == deploy/prometheus/alerts.yml, ConfigMap == deploy/alertmanager/alertmanager.yml"
+          docker run --rm --entrypoint promtool -v "$PWD/chart-out:/chart:ro" \
+            "$PROMETHEUS_IMAGE" check rules /chart/alerts.yml
+          docker run --rm --entrypoint amtool -v "$PWD/chart-out:/chart:ro" \
+            "$ALERTMANAGER_IMAGE" check-config /chart/alertmanager.yml
       - name: Schema rejects insecure values
         run: |
-          if helm template x deploy/helm/fleetwatch --set securityContext.readOnlyRootFilesystem=false > /dev/null 2>&1; then
-            echo "values.schema.json should reject readOnlyRootFilesystem=false"; exit 1
-          fi
-          echo "schema correctly rejected an insecure override"
+          reject() {
+            if helm template x deploy/helm/fleetwatch "$@" > /dev/null 2>&1; then
+              echo "values.schema.json should reject: $*"; exit 1
+            fi
+            echo "rejected as expected: $*"
+          }
+          reject --set securityContext.readOnlyRootFilesystem=false
+          reject --set alertmanager.enabled=true --set alertmanager.securityContext.readOnlyRootFilesystem=false
+          reject --set alertmanager.enabled=true --set alertmanager.securityContext.runAsNonRoot=false
+          reject --set alertmanager.enabled=true --set alertmanager.securityContext.allowPrivilegeEscalation=true
+          reject --set alertmanager.enabled=true --set 'alertmanager.securityContext.capabilities.drop={NET_RAW}'
+          reject --set alertmanager.enabled=true --set alertmanager.podSecurityContext.runAsNonRoot=false
+          reject --set alertmanager.enabled=true --set alertmanager.existingSecret=Not_A_Secret_Name
+          helm template x deploy/helm/fleetwatch --set alertmanager.enabled=true > /dev/null
+          echo "secure defaults still render"
 
   terraform:
     name: Terraform fmt + validate
@@ -197,7 +251,12 @@ jobs:
           version: ${{ env.HELM_VERSION }}
       - name: Load image into kind
         run: kind load docker-image fleetwatch-probe:e2e --name fleetwatch
-      - name: helm install
+      - name: Notifier Secret for the Alertmanager mount (dummy value)
+        run: |
+          kubectl create namespace fleetwatch
+          kubectl -n fleetwatch create secret generic fleetwatch-notifiers \
+            --from-literal=slack_webhook_url=https://hooks.example.invalid/not-a-real-webhook
+      - name: helm install (with Alertmanager)
         run: |
           helm install fleetwatch deploy/helm/fleetwatch \
             --namespace fleetwatch --create-namespace \
@@ -205,9 +264,16 @@ jobs:
             --set image.tag=e2e \
             --set image.pullPolicy=Never \
             --set config.intervalSeconds=15 \
+            --set alertmanager.enabled=true \
+            --set alertmanager.existingSecret=fleetwatch-notifiers \
             --wait --timeout 4m
       - name: Wait for ready
-        run: kubectl -n fleetwatch rollout status deployment/fleetwatch --timeout=180s
+        run: |
+          kubectl -n fleetwatch rollout status deployment/fleetwatch --timeout=180s
+          kubectl -n fleetwatch rollout status deployment/fleetwatch-alertmanager --timeout=180s
+          kubectl -n fleetwatch wait pod -l app.kubernetes.io/component=alertmanager \
+            --for=condition=Ready --timeout=120s
+          kubectl -n fleetwatch get pods -o wide
       - name: Port-forward and check /healthz, /readyz, /metrics
         run: |
           kubectl -n fleetwatch port-forward svc/fleetwatch 18080:8080 > port-forward.log 2>&1 &
@@ -231,13 +297,34 @@ jobs:
           echo "--- sample of /metrics ---"
           grep -E '^fleetwatch_probe_(up|tls_cert_expiry_days)\{' metrics.txt || true
           curl -sf http://127.0.0.1:18080/ | head -c 600; echo
+      - name: Alertmanager is Ready and /-/ready answers through a port-forward
+        run: |
+          ready="$(kubectl -n fleetwatch get pods -l app.kubernetes.io/component=alertmanager \
+            -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}')"
+          echo "Alertmanager pod Ready=${ready}"
+          test "${ready}" = "True"
+          kubectl -n fleetwatch port-forward svc/fleetwatch-alertmanager 19093:9093 > am-port-forward.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:19093/-/ready > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:19093/-/ready; echo
+          curl -sf http://127.0.0.1:19093/api/v2/status \
+            | python3 -c 'import json,sys; s=json.load(sys.stdin); print("Alertmanager", s["versionInfo"]["version"]); assert "receiver: default" in s["config"]["original"]'
+          # The notifier Secret is mounted where the *_file settings look for it.
+          mounted="$(kubectl -n fleetwatch exec deployment/fleetwatch-alertmanager -- \
+            cat /etc/alertmanager/secrets/slack_webhook_url)"
+          test -n "${mounted}"
+          echo "notifier Secret mounted at /etc/alertmanager/secrets"
       - name: Debug on failure
         if: failure()
         run: |
           kubectl -n fleetwatch get all,networkpolicy,configmap -o wide || true
           kubectl -n fleetwatch describe pods || true
           kubectl -n fleetwatch logs deployment/fleetwatch --tail=200 || true
+          kubectl -n fleetwatch logs deployment/fleetwatch-alertmanager --tail=200 || true
           cat port-forward.log || true
+          cat am-port-forward.log || true
 
   compose-smoke:
     name: Docker Compose smoke test

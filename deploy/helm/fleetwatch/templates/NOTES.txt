@@ -10,3 +10,19 @@ Look at it locally:
 
 A ServiceMonitor was created, so the Prometheus Operator will scrape it.
 {{- end }}
+{{- if .Values.prometheusRule.enabled }}
+
+A PrometheusRule with the 3 FleetWatch alerts was created (TargetDown, HighLatency, CertExpiringSoon).
+{{- end }}
+{{- if .Values.alertmanager.enabled }}
+
+Alertmanager is running as {{ include "fleetwatch.alertmanager.fullname" . }}:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "fleetwatch.alertmanager.fullname" . }} 9093:{{ .Values.alertmanager.service.port }}
+  curl http://127.0.0.1:9093/-/ready
+
+Point your Prometheus at http://{{ include "fleetwatch.alertmanager.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.alertmanager.service.port }}
+{{- if not .Values.alertmanager.existingSecret }}
+No notifier secret is mounted: alerts are grouped and visible, nothing is sent.
+{{- end }}
+{{- end }}
