@@ -115,6 +115,7 @@ variable "targets" {
     { name = "jobfit-ai", url = "https://jobfit-ai-hbi.pages.dev", expect_keyword = "JobFit AI" },
     { name = "readme-glow", url = "https://readme-glow.pages.dev", expect_keyword = "ReadmeGlow" },
     { name = "picopulse", url = "https://picopulse.pages.dev", expect_keyword = "PicoPulse" },
+    { name = "super-ttt", url = "https://super-ttt.pages.dev", expect_keyword = "Super Tic-Tac-Toe" },
   ]
 
   validation {

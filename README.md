@@ -17,7 +17,7 @@ Cloudflare Worker that serves the public status page.
 
 ```mermaid
 flowchart LR
-    sites["10 live sites<br/>portfolio + pages.dev apps"]
+    sites["11 live sites<br/>portfolio + pages.dev apps"]
 
     subgraph local["Self-hosted stack: docker compose or Kubernetes"]
         probe["probe<br/>Python stdlib<br/>/metrics /healthz /readyz"]
@@ -127,7 +127,7 @@ and answer `/-/ready`.
 | `image.repository` / `image.tag` / `image.pullPolicy` | `ghcr.io/naniiic137/fleetwatch` / appVersion / `IfNotPresent` | probe image |
 | `replicaCount` | `1` | probe replicas |
 | `config.intervalSeconds`, `timeoutSeconds`, `concurrency`, `logLevel` | `30`, `10`, `8`, `INFO` | probe settings (`FW_*` env vars) |
-| `targets` | the 10 sites of `targets.yaml` | rendered into the targets ConfigMap |
+| `targets` | the 11 sites of `targets.yaml` | rendered into the targets ConfigMap |
 | `service.type` / `service.port` | `ClusterIP` / `8080` | probe Service |
 | `podSecurityContext`, `securityContext` | non-root `10001`, read-only root FS, drop ALL, seccomp | the schema rejects weaker values |
 | `resources`, `livenessProbe`, `readinessProbe` | small requests/limits, `/healthz`, `/readyz` | probe container |
@@ -317,13 +317,13 @@ lines, label escaping, cumulative `le` buckets ending in `+Inf`, `_sum`/`_count`
 
 | Approach | Writes/day | Fits the free plan? |
 | --- | --- | --- |
-| one key per site per run, every 5 min | 10 × 288 = **2,880** | no |
+| one key per site per run, every 5 min | 11 × 288 = **3,168** | no |
 | one key per run, every 1 min | 1,440 | no |
 | **one key per run, every 5 min (FleetWatch)** | **288** (29% of the quota) | yes, with 712 writes/day to spare |
 
 The single `state` value holds, per site, every check of the last 24 h (288
 points, for the sparkline and 24 h uptime) plus one bucket per hour for 7 days
-(168 buckets, for 7-day uptime). That is about 85 KB for 10 sites, far below the
+(168 buckets, for 7-day uptime). That is about 94 KB for 11 sites, far below the
 25 MiB value limit, and reading it is one KV read per page view. Adding sites
 does not add writes. The Worker reads only the status code and cancels the
 body, which keeps each run inside the free plan's 10 ms CPU limit.

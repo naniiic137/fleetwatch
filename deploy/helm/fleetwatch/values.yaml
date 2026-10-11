@@ -66,6 +66,10 @@ targets:
     url: https://picopulse.pages.dev
     expect_status: 200
     expect_keyword: "PicoPulse"
+  - name: super-ttt
+    url: https://super-ttt.pages.dev
+    expect_status: 200
+    expect_keyword: "Super Tic-Tac-Toe"
 
 service:
   type: ClusterIP
