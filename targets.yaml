@@ -58,3 +58,7 @@ targets:
     url: https://super-ttt.pages.dev
     expect_status: 200
     expect_keyword: "Super Tic-Tac-Toe"
+  - name: nani-os
+    url: https://nani.is-a.dev
+    expect_status: 200
+    expect_keyword: "nani.is-a.dev"

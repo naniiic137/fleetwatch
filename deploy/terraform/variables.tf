@@ -116,6 +116,7 @@ variable "targets" {
     { name = "readme-glow", url = "https://readme-glow.pages.dev", expect_keyword = "ReadmeGlow" },
     { name = "picopulse", url = "https://picopulse.pages.dev", expect_keyword = "PicoPulse" },
     { name = "super-ttt", url = "https://super-ttt.pages.dev", expect_keyword = "Super Tic-Tac-Toe" },
+    { name = "nani-os", url = "https://nani.is-a.dev", expect_keyword = "nani.is-a.dev" },
   ]
 
   validation {

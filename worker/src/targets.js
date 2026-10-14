@@ -15,4 +15,5 @@ export const TARGETS = [
   { name: "readme-glow", url: "https://readme-glow.pages.dev", expectStatus: 200 },
   { name: "picopulse", url: "https://picopulse.pages.dev", expectStatus: 200 },
   { name: "super-ttt", url: "https://super-ttt.pages.dev", expectStatus: 200 },
+  { name: "nani-os", url: "https://nani.is-a.dev", expectStatus: 200 },
 ];
