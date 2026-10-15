@@ -117,6 +117,7 @@ variable "targets" {
     { name = "picopulse", url = "https://picopulse.pages.dev", expect_keyword = "PicoPulse" },
     { name = "super-ttt", url = "https://super-ttt.pages.dev", expect_keyword = "Super Tic-Tac-Toe" },
     { name = "nani-os", url = "https://nani.is-a.dev", expect_keyword = "nani.is-a.dev" },
+    { name = "steg-bill", url = "https://naniiic137.github.io/steg-bill-estimator/", expect_keyword = "STEG Bill Estimator" },
   ]
 
   validation {

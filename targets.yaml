@@ -62,3 +62,7 @@ targets:
     url: https://nani.is-a.dev
     expect_status: 200
     expect_keyword: "nani.is-a.dev"
+  - name: steg-bill
+    url: https://naniiic137.github.io/steg-bill-estimator/
+    expect_status: 200
+    expect_keyword: "STEG Bill Estimator"
