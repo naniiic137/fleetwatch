@@ -18,4 +18,5 @@ export const TARGETS = [
   { name: "nani-os", url: "https://nani.is-a.dev", expectStatus: 200 },
   { name: "steg-bill", url: "https://fatoura.pages.dev/", expectStatus: 200 },
   { name: "dice-game", url: "https://dice-game-8cy.pages.dev/", expectStatus: 200 },
+  { name: "valenlink", url: "https://valenlink.pages.dev/", expectStatus: 200 },
 ];

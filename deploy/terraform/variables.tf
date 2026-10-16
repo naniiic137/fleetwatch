@@ -119,6 +119,7 @@ variable "targets" {
     { name = "nani-os", url = "https://nani.is-a.dev", expect_keyword = "nani.is-a.dev" },
     { name = "steg-bill", url = "https://fatoura.pages.dev/", expect_keyword = "STEG Bill Estimator" },
     { name = "dice-game", url = "https://dice-game-8cy.pages.dev/", expect_keyword = "Dice Game" },
+    { name = "valenlink", url = "https://valenlink.pages.dev/", expect_keyword = "ValenLink" },
   ]
 
   validation {

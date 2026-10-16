@@ -70,3 +70,7 @@ targets:
     url: https://dice-game-8cy.pages.dev/
     expect_status: 200
     expect_keyword: "Dice Game"
+  - name: valenlink
+    url: https://valenlink.pages.dev/
+    expect_status: 200
+    expect_keyword: "ValenLink"
