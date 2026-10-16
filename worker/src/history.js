@@ -6,7 +6,7 @@
 //   hours [[hour, checks, ups, sumMs]] one bucket per hour for the last 7 days (168)
 //
 // minute = epoch minutes, hour = epoch hours; ok is 1 or 0; sumMs adds the latency
-// of successful checks only. ~112 KB for 13 targets, far under KV's 25 MiB value limit.
+// of successful checks only. ~120 KB for 14 targets, far under KV's 25 MiB value limit.
 
 export const STATE_KEY = "state";
 export const STATE_VERSION = 1;

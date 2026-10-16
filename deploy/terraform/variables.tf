@@ -118,6 +118,7 @@ variable "targets" {
     { name = "super-ttt", url = "https://super-ttt.pages.dev", expect_keyword = "Super Tic-Tac-Toe" },
     { name = "nani-os", url = "https://nani.is-a.dev", expect_keyword = "nani.is-a.dev" },
     { name = "steg-bill", url = "https://fatoura.pages.dev/", expect_keyword = "STEG Bill Estimator" },
+    { name = "dice-game", url = "https://dice-game-8cy.pages.dev/", expect_keyword = "Dice Game" },
   ]
 
   validation {

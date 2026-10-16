@@ -78,6 +78,10 @@ targets:
     url: https://fatoura.pages.dev/
     expect_status: 200
     expect_keyword: "STEG Bill Estimator"
+  - name: dice-game
+    url: https://dice-game-8cy.pages.dev/
+    expect_status: 200
+    expect_keyword: "Dice Game"
 
 service:
   type: ClusterIP

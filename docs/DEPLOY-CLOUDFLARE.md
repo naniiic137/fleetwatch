@@ -92,9 +92,9 @@ page" line and in the repo's About > Website field.
 | --- | --- | --- |
 | KV writes | 1,000 / day | 288 / day (one key per 5-minute run) |
 | KV reads | 100,000 / day | 288 by the cron + 1 per page view |
-| KV value size | 25 MiB | ~112 KB (13 sites, 7 days) |
+| KV value size | 25 MiB | ~120 KB (14 sites, 7 days) |
 | CPU time per invocation | 10 ms | status codes only, bodies are not read |
-| Subrequests per invocation | 50 | 13 fetches + 2 KV calls per run |
+| Subrequests per invocation | 50 | 14 fetches + 2 KV calls per run |
 | Cron Triggers per account | 5 | 1 |
 
 ## Cloudflare doc pages used

@@ -17,4 +17,5 @@ export const TARGETS = [
   { name: "super-ttt", url: "https://super-ttt.pages.dev", expectStatus: 200 },
   { name: "nani-os", url: "https://nani.is-a.dev", expectStatus: 200 },
   { name: "steg-bill", url: "https://fatoura.pages.dev/", expectStatus: 200 },
+  { name: "dice-game", url: "https://dice-game-8cy.pages.dev/", expectStatus: 200 },
 ];
