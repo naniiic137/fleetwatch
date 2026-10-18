@@ -120,6 +120,7 @@ variable "targets" {
     { name = "steg-bill", url = "https://fatoura.pages.dev/", expect_keyword = "STEG Bill Estimator" },
     { name = "dice-game", url = "https://dice-game-8cy.pages.dev/", expect_keyword = "Dice Game" },
     { name = "valenlink", url = "https://valenlink.pages.dev/", expect_keyword = "ValenLink" },
+    { name = "nani-blog", url = "https://nani-blog.pages.dev/", expect_keyword = "Notebook" },
   ]
 
   validation {

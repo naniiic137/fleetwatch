@@ -19,4 +19,5 @@ export const TARGETS = [
   { name: "steg-bill", url: "https://fatoura.pages.dev/", expectStatus: 200 },
   { name: "dice-game", url: "https://dice-game-8cy.pages.dev/", expectStatus: 200 },
   { name: "valenlink", url: "https://valenlink.pages.dev/", expectStatus: 200 },
+  { name: "nani-blog", url: "https://nani-blog.pages.dev/", expectStatus: 200 },
 ];

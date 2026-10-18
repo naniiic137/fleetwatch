@@ -74,3 +74,7 @@ targets:
     url: https://valenlink.pages.dev/
     expect_status: 200
     expect_keyword: "ValenLink"
+  - name: nani-blog
+    url: https://nani-blog.pages.dev/
+    expect_status: 200
+    expect_keyword: "Notebook"
