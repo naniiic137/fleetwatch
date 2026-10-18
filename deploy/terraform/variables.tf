@@ -121,7 +121,6 @@ variable "targets" {
     { name = "dice-game", url = "https://dice-of-chance.pages.dev/", expect_keyword = "Dice Game" },
     { name = "valenlink", url = "https://valenlink.pages.dev/", expect_keyword = "ValenLink" },
     { name = "nani-blog", url = "https://nani-blog.pages.dev/", expect_keyword = "Notebook" },
-    { name = "poof", url = "https://poof-link.pages.dev/", expect_keyword = "Poof" },
   ]
 
   validation {

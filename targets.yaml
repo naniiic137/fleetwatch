@@ -78,7 +78,3 @@ targets:
     url: https://nani-blog.pages.dev/
     expect_status: 200
     expect_keyword: "Notebook"
-  - name: poof
-    url: https://poof-link.pages.dev/
-    expect_status: 200
-    expect_keyword: "Poof"

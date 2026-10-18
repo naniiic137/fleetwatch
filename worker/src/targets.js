@@ -20,5 +20,4 @@ export const TARGETS = [
   { name: "dice-game", url: "https://dice-of-chance.pages.dev/", expectStatus: 200 },
   { name: "valenlink", url: "https://valenlink.pages.dev/", expectStatus: 200 },
   { name: "nani-blog", url: "https://nani-blog.pages.dev/", expectStatus: 200 },
-  { name: "poof", url: "https://poof-link.pages.dev/", expectStatus: 200 },
 ];
