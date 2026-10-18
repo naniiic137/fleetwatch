@@ -107,8 +107,8 @@ variable "targets" {
   default = [
     { name = "portfolio", url = "https://www.hamzabenismail.cloud-ip.cc", expect_keyword = "Hamza Ben Ismail" },
     { name = "chkobba", url = "https://chkooba.pages.dev", expect_keyword = "Chkobba" },
-    { name = "kalak", url = "https://kalak-aar.pages.dev", expect_keyword = "Kalak" },
-    { name = "fog-chess", url = "https://fog-chess-erb.pages.dev", expect_keyword = "Fog Chess" },
+    { name = "kalak", url = "https://kalaktn.pages.dev", expect_keyword = "Kalak" },
+    { name = "fog-chess", url = "https://fog-chess-game.pages.dev", expect_keyword = "Fog Chess" },
     { name = "custom-checkers", url = "https://custom-checkers.pages.dev", expect_keyword = "Custom Checkers" },
     { name = "chess-cipher", url = "https://chesscipher.pages.dev", expect_keyword = "Chess Cipher" },
     { name = "cipher-chat", url = "https://cipher-chat.pages.dev", expect_keyword = "CipherChat" },
@@ -118,10 +118,10 @@ variable "targets" {
     { name = "super-ttt", url = "https://super-ttt.pages.dev", expect_keyword = "Super Tic-Tac-Toe" },
     { name = "nani-os", url = "https://nani.is-a.dev", expect_keyword = "nani.is-a.dev" },
     { name = "steg-bill", url = "https://fatoura.pages.dev/", expect_keyword = "STEG Bill Estimator" },
-    { name = "dice-game", url = "https://dice-game-8cy.pages.dev/", expect_keyword = "Dice Game" },
+    { name = "dice-game", url = "https://dice-of-chance.pages.dev/", expect_keyword = "Dice Game" },
     { name = "valenlink", url = "https://valenlink.pages.dev/", expect_keyword = "ValenLink" },
     { name = "nani-blog", url = "https://nani-blog.pages.dev/", expect_keyword = "Notebook" },
-    { name = "poof", url = "https://poof-7nt.pages.dev/", expect_keyword = "Poof" },
+    { name = "poof", url = "https://poof-link.pages.dev/", expect_keyword = "Poof" },
   ]
 
   validation {

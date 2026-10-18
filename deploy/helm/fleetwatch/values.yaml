@@ -35,11 +35,11 @@ targets:
     expect_status: 200
     expect_keyword: "Chkobba"
   - name: kalak
-    url: https://kalak-aar.pages.dev
+    url: https://kalaktn.pages.dev
     expect_status: 200
     expect_keyword: "Kalak"
   - name: fog-chess
-    url: https://fog-chess-erb.pages.dev
+    url: https://fog-chess-game.pages.dev
     expect_status: 200
     expect_keyword: "Fog Chess"
   - name: custom-checkers
@@ -79,7 +79,7 @@ targets:
     expect_status: 200
     expect_keyword: "STEG Bill Estimator"
   - name: dice-game
-    url: https://dice-game-8cy.pages.dev/
+    url: https://dice-of-chance.pages.dev/
     expect_status: 200
     expect_keyword: "Dice Game"
   - name: valenlink
@@ -91,7 +91,7 @@ targets:
     expect_status: 200
     expect_keyword: "Notebook"
   - name: poof
-    url: https://poof-7nt.pages.dev/
+    url: https://poof-link.pages.dev/
     expect_status: 200
     expect_keyword: "Poof"
 

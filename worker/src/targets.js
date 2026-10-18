@@ -6,8 +6,8 @@
 export const TARGETS = [
   { name: "portfolio", url: "https://www.hamzabenismail.cloud-ip.cc", expectStatus: 200 },
   { name: "chkobba", url: "https://chkooba.pages.dev", expectStatus: 200 },
-  { name: "kalak", url: "https://kalak-aar.pages.dev", expectStatus: 200 },
-  { name: "fog-chess", url: "https://fog-chess-erb.pages.dev", expectStatus: 200 },
+  { name: "kalak", url: "https://kalaktn.pages.dev", expectStatus: 200 },
+  { name: "fog-chess", url: "https://fog-chess-game.pages.dev", expectStatus: 200 },
   { name: "custom-checkers", url: "https://custom-checkers.pages.dev", expectStatus: 200 },
   { name: "chess-cipher", url: "https://chesscipher.pages.dev", expectStatus: 200 },
   { name: "cipher-chat", url: "https://cipher-chat.pages.dev", expectStatus: 200 },
@@ -17,8 +17,8 @@ export const TARGETS = [
   { name: "super-ttt", url: "https://super-ttt.pages.dev", expectStatus: 200 },
   { name: "nani-os", url: "https://nani.is-a.dev", expectStatus: 200 },
   { name: "steg-bill", url: "https://fatoura.pages.dev/", expectStatus: 200 },
-  { name: "dice-game", url: "https://dice-game-8cy.pages.dev/", expectStatus: 200 },
+  { name: "dice-game", url: "https://dice-of-chance.pages.dev/", expectStatus: 200 },
   { name: "valenlink", url: "https://valenlink.pages.dev/", expectStatus: 200 },
   { name: "nani-blog", url: "https://nani-blog.pages.dev/", expectStatus: 200 },
-  { name: "poof", url: "https://poof-7nt.pages.dev/", expectStatus: 200 },
+  { name: "poof", url: "https://poof-link.pages.dev/", expectStatus: 200 },
 ];
