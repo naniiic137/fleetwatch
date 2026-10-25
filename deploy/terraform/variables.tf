@@ -121,6 +121,11 @@ variable "targets" {
     { name = "dice-game", url = "https://dice-of-chance.pages.dev/", expect_keyword = "Dice Game" },
     { name = "valenlink", url = "https://valenlink.pages.dev/", expect_keyword = "ValenLink" },
     { name = "nani-blog", url = "https://nani-blog.pages.dev/", expect_keyword = "Notebook" },
+    { name = "prayer-times", url = "https://prayer-times-tn.pages.dev/", expect_keyword = "Prayer Times" },
+    { name = "derja-translator", url = "https://derja-translator.pages.dev/", expect_keyword = "Derja Translator" },
+    { name = "rami", url = "https://rami-tn.pages.dev/", expect_keyword = "Rami" },
+    { name = "belote", url = "https://belote-tn.pages.dev/", expect_keyword = "Belote" },
+    { name = "interview-room", url = "https://interview-room.pages.dev/", expect_keyword = "Interview Room" },
   ]
 
   validation {

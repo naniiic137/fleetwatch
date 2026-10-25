@@ -20,4 +20,9 @@ export const TARGETS = [
   { name: "dice-game", url: "https://dice-of-chance.pages.dev/", expectStatus: 200 },
   { name: "valenlink", url: "https://valenlink.pages.dev/", expectStatus: 200 },
   { name: "nani-blog", url: "https://nani-blog.pages.dev/", expectStatus: 200 },
+  { name: "prayer-times", url: "https://prayer-times-tn.pages.dev/", expectStatus: 200 },
+  { name: "derja-translator", url: "https://derja-translator.pages.dev/", expectStatus: 200 },
+  { name: "rami", url: "https://rami-tn.pages.dev/", expectStatus: 200 },
+  { name: "belote", url: "https://belote-tn.pages.dev/", expectStatus: 200 },
+  { name: "interview-room", url: "https://interview-room.pages.dev/", expectStatus: 200 },
 ];
