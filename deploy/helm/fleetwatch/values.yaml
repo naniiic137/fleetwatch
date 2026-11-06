@@ -110,6 +110,10 @@ targets:
     url: https://interview-room.pages.dev/
     expect_status: 200
     expect_keyword: "Interview Room"
+  - name: applytrack
+    url: https://applytrack.pages.dev/
+    expect_status: 200
+    expect_keyword: "ApplyTrack"
 
 service:
   type: ClusterIP

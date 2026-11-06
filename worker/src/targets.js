@@ -25,4 +25,5 @@ export const TARGETS = [
   { name: "rami", url: "https://rami-tn.pages.dev/", expectStatus: 200 },
   { name: "belote", url: "https://belote-tn.pages.dev/", expectStatus: 200 },
   { name: "interview-room", url: "https://interview-room.pages.dev/", expectStatus: 200 },
+  { name: "applytrack", url: "https://applytrack.pages.dev/", expectStatus: 200 },
 ];
