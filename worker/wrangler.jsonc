@@ -6,9 +6,9 @@
   "main": "src/index.js",
   "compatibility_date": "2026-09-01",
 
-  // Cron Trigger (UTC): every 5 minutes = 288 runs/day = 288 KV writes/day.
+  // Cron Trigger (UTC): every 10 minutes = 144 runs/day = 144 KV writes/day.
   "triggers": {
-    "crons": ["*/5 * * * *"]
+    "crons": ["*/10 * * * *"]
   },
 
   // Workers KV: holds the rolling 7-day history as ONE key ("state").

@@ -2,7 +2,7 @@
   "name": "fleetwatch-worker",
   "version": "0.1.0",
   "private": true,
-  "description": "FleetWatch status page and 5-minute checker on Cloudflare Workers (no dependencies).",
+  "description": "FleetWatch status page and 10-minute checker on Cloudflare Workers (no dependencies).",
   "type": "module",
   "scripts": {
     "test": "node --test"

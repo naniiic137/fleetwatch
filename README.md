@@ -31,7 +31,7 @@ flowchart LR
     end
 
     subgraph cf["Cloudflare, always on, free plan"]
-        cron["Cron Trigger<br/>every 5 min"]
+        cron["Cron Trigger<br/>every 10 min"]
         worker["Worker<br/>status page, /api/status, /metrics"]
         kv[("Workers KV<br/>1 key, 7-day history")]
         cron --> worker
@@ -57,7 +57,7 @@ flowchart LR
 | **Kubernetes** | [`deploy/helm/fleetwatch`](deploy/helm/fleetwatch) | Deployment, Service, ConfigMap of targets, liveness/readiness probes, `runAsNonRoot` + `readOnlyRootFilesystem` + drop ALL capabilities + seccomp, resources, NetworkPolicy (ingress 8080, egress DNS + 80/443 only), optional ServiceMonitor and PrometheusRule (the same 3 alerts), optional Alertmanager (same config as compose, same hardening, its own NetworkPolicy, notifier credentials from an existing Secret), `values.schema.json` that rejects insecure overrides. |
 | **IaC** | [`deploy/terraform`](deploy/terraform) | Terraform module deploying the chart with the `helm` provider, typed + validated variables and useful outputs. |
 | **CI/CD** | [`.github/workflows`](.github/workflows) | Lint, test, build, scan, a real **kind** cluster e2e and a Compose smoke test on every push/PR; tagged releases push a multi-arch image with SBOM and provenance to GHCR. |
-| **Edge status page** | [`worker/`](worker) | Cloudflare Worker in plain JS (no npm deps): Cron Trigger every 5 min, rolling 7-day history in **one** KV key, public status page (24 h / 7 d uptime, inline-SVG latency sparkline, dark/light, phone friendly), `/api/status` and `/metrics`. Pure functions tested with `node --test`. |
+| **Edge status page** | [`worker/`](worker) | Cloudflare Worker in plain JS (no npm deps): Cron Trigger every 10 min, rolling 7-day history in **one** KV key, public status page (24 h / 7 d uptime, inline-SVG latency sparkline, dark/light, phone friendly), `/api/status` and `/metrics`. Pure functions tested with `node --test`. |
 
 ## Run it
 
@@ -317,16 +317,20 @@ lines, label escaping, cumulative `le` buckets ending in `+Inf`, `_sum`/`_count`
 
 | Approach | Writes/day | Fits the free plan? |
 | --- | --- | --- |
-| one key per site per run, every 5 min | 22 × 288 = **6,336** | no |
+| one key per site per run, every 10 min | 22 × 144 = **3,168** | no |
 | one key per run, every 1 min | 1,440 | no |
-| **one key per run, every 5 min (FleetWatch)** | **288** (29% of the quota) | yes, with 712 writes/day to spare |
+| **one key per run, every 10 min (FleetWatch)** | **144** (14% of the quota) | yes, with 856 writes/day to spare |
 
-The single `state` value holds, per site, every check of the last 24 h (288
+The single `state` value holds, per site, every check of the last 24 h (144
 points, for the sparkline and 24 h uptime) plus one bucket per hour for 7 days
-(168 buckets, for 7-day uptime). That is about 190 KB for 22 sites, far below the
+(168 buckets, for 7-day uptime). That is about 110 KB for 22 sites, far below the
 25 MiB value limit, and reading it is one KV read per page view. Adding sites
-does not add writes. The Worker reads only the status code and cancels the
-body, which keeps each run inside the free plan's 10 ms CPU limit.
+does not add writes.
+
+The free plan also limits each run to 10 ms of CPU, so a run stays light. The
+Worker reads only the status code and cancels the body. Each site's rows are one
+string: a run adds to the end and cuts from the front without parsing every row,
+and rows are unpacked only when the page or the API is served.
 
 **Why there is no cron in GitHub Actions (and no Dependabot).** Scheduled
 workflows and bot PRs generate notifications whether or not anything is wrong.

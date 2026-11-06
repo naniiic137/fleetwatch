@@ -1,7 +1,7 @@
-// FleetWatch Worker: checks the sites on a Cron Trigger (every 5 minutes) and
+// FleetWatch Worker: checks the sites on a Cron Trigger (every 10 minutes) and
 // serves a public status page, /api/status (JSON) and /metrics (Prometheus).
 //
-// KV budget: exactly ONE write per cron run (288/day), see README "KV math".
+// KV budget: exactly ONE write per cron run (144/day), see README "KV math".
 
 import { checkAll } from "./check.js";
 import { applyResults, normalizeState, STATE_KEY, summarize } from "./history.js";

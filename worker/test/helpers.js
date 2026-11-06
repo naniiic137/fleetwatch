@@ -48,3 +48,41 @@ export function makeClock(start) {
   };
   return now;
 }
+
+/**
+ * A state as the version 1 code left it after 7 days of checks at 5-minute spacing:
+ * arrays of arrays, a url per site, some failed checks. Same result as running it.
+ */
+export function v1State(targets, nowMs) {
+  const STEP = 5 * 60_000;
+  const nowMinute = Math.floor(nowMs / 60_000);
+  const nowHour = Math.floor(nowMs / 3_600_000);
+  const state = { v: 1, updated: nowMs, runs: 2016, targets: {} };
+  targets.forEach((target, n) => {
+    const raw = [];
+    const hours = [];
+    let last = null;
+    for (let i = 2015; i >= 0; i--) {
+      const t = nowMs - i * STEP;
+      const ok = (i + n) % 97 === 5 ? 0 : 1;
+      const ms = ok ? 80 + ((i * 37 + n * 11) % 400) : 10_000;
+      raw.push([Math.floor(t / 60_000), ms, ok]);
+      const hour = Math.floor(t / 3_600_000);
+      if (hours.at(-1)?.[0] !== hour) hours.push([hour, 0, 0, 0]);
+      const bucket = hours.at(-1);
+      bucket[1] += 1;
+      bucket[2] += ok;
+      bucket[3] += ok ? ms : 0;
+      last = ok
+        ? { t, ok: true, code: 200, ms, err: null }
+        : { t, ok: false, code: 0, ms, err: "timeout after 10000 ms" };
+    }
+    state.targets[target.name] = {
+      url: target.url,
+      last,
+      raw: raw.filter((p) => p[0] > nowMinute - 24 * 60),
+      hours: hours.filter((b) => b[0] > nowHour - 7 * 24),
+    };
+  });
+  return JSON.parse(JSON.stringify(state));
+}

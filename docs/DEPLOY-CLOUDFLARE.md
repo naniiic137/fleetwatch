@@ -1,6 +1,6 @@
 # Deploy the FleetWatch Worker on Cloudflare (dashboard + GitHub)
 
-The Worker in [`worker/`](../worker) checks the sites every 5 minutes with a
+The Worker in [`worker/`](../worker) checks the sites every 10 minutes with a
 Cloudflare **Cron Trigger** and serves the public status page. Cloudflare's Git
 integration ("Workers Builds") deploys it from this GitHub repository. Nothing
 is installed on your PC.
@@ -74,9 +74,9 @@ If you need to change these settings later: the Worker > **Settings** > **Build*
 ## 5. Check that it works
 
 - The page first says **"Waiting for the first check"**. The cron runs at every
-  5th minute (UTC), so data appears within 5 minutes. Refresh after that.
+  10th minute (UTC), so data appears within 10 minutes. Refresh after that.
 - `/api/status` returns JSON and `/metrics` returns Prometheus text.
-- Cron runs: the Worker > **Settings** > **Trigger Events** shows `*/5 * * * *`;
+- Cron runs: the Worker > **Settings** > **Trigger Events** shows `*/10 * * * *`;
   **View events** lists the 100 most recent runs. It can take up to 30 minutes
   before the first events show for a new Worker.
 - Logs: each run logs one JSON line (`fleetwatch cron run`) with the up/down counts.
@@ -90,9 +90,9 @@ page" line and in the repo's About > Website field.
 
 | Limit (Workers Free) | Value | FleetWatch use |
 | --- | --- | --- |
-| KV writes | 1,000 / day | 288 / day (one key per 5-minute run) |
-| KV reads | 100,000 / day | 288 by the cron + 1 per page view |
-| KV value size | 25 MiB | ~190 KB (22 sites, 7 days) |
+| KV writes | 1,000 / day | 144 / day (one key per 10-minute run) |
+| KV reads | 100,000 / day | 144 by the cron + 1 per page view |
+| KV value size | 25 MiB | ~110 KB (22 sites, 7 days) |
 | CPU time per invocation | 10 ms | status codes only, bodies are not read |
 | Subrequests per invocation | 50 | 22 fetches + 2 KV calls per run |
 | Cron Triggers per account | 5 | 1 |

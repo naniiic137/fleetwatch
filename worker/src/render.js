@@ -3,7 +3,7 @@
 
 import { RAW_WINDOW_MINUTES } from "./history.js";
 
-export const CHECK_INTERVAL_MINUTES = 5;
+export const CHECK_INTERVAL_MINUTES = 10;
 const REPO_URL = "https://github.com/naniiic137/fleetwatch";
 
 export function escapeHtml(value) {
@@ -214,7 +214,7 @@ export function renderStatusPage(summaries, { nowMs, updatedMs }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Live uptime and latency of Hamza Ben Ismail's sites, checked every 5 minutes from Cloudflare.">
+<meta name="description" content="Live uptime and latency of Hamza Ben Ismail's sites, checked every ${CHECK_INTERVAL_MINUTES} minutes from Cloudflare.">
 <title>FleetWatch Status</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%2314894a'/%3E%3C/svg%3E">
 <style>${CSS}</style>

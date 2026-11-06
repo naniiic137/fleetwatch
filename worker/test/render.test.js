@@ -69,6 +69,24 @@ test("sparkline draws a broken line plus failure ticks", () => {
   assert.match(svg, /,4\.0/);
 });
 
+test("sparkline stays one line across old 5-minute and new 10-minute samples", () => {
+  const points = [];
+  for (let m = 240; m > 120; m -= 5) points.push([NOW_MIN - m, 100, 1]);
+  for (let m = 120; m >= 0; m -= 10) points.push([NOW_MIN - m, 100, 1]);
+  const svg = sparkline(points, NOW);
+  assert.equal((svg.match(/<polyline /g) || []).length, 1);
+  assert.equal((svg.match(/<circle /g) || []).length, 0);
+});
+
+test("sparkline breaks only after more than 3 intervals without a check", () => {
+  const lines = (gap) => {
+    const points = [[NOW_MIN - gap - 20, 100, 1], [NOW_MIN - gap - 10, 100, 1], [NOW_MIN - 10, 100, 1], [NOW_MIN, 100, 1]];
+    return (sparkline(points, NOW).match(/<polyline /g) || []).length;
+  };
+  assert.equal(lines(30), 1);
+  assert.equal(lines(31), 2);
+});
+
 test("sparkline handles no data", () => {
   const svg = sparkline([], NOW);
   assert.match(svg, /No checks in the last 24 hours yet/);
@@ -87,7 +105,9 @@ test("status page escapes names and shows the numbers", () => {
   assert.match(html, /99\.65%/);
   assert.match(html, /Down · 503/);
   assert.match(html, /expected 200, got 503/);
-  assert.match(html, /Last check 3 min ago · every 5 min/);
+  assert.match(html, /Last check 3 min ago · every 10 min/);
+  assert.match(html, /checked every 10 minutes from Cloudflare/);
+  assert.doesNotMatch(html, /every 5 min/);
   assert.match(html, /name="viewport"/);
   assert.match(html, /prefers-color-scheme:dark/);
 });
