@@ -26,4 +26,5 @@ export const TARGETS = [
   { name: "belote", url: "https://belote-tn.pages.dev/", expectStatus: 200 },
   { name: "interview-room", url: "https://interview-room.pages.dev/", expectStatus: 200 },
   { name: "applytrack", url: "https://applytrack.pages.dev/", expectStatus: 200 },
+  { name: "setupcord", url: "https://setupcord.pages.dev/health", expectStatus: 200 },
 ];

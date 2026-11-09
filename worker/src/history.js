@@ -8,7 +8,7 @@
 // minute = epoch minutes, hour = epoch hours; ok is 1 or 0; sumMs adds the latency
 // of successful checks only. raw and hours are plain strings, oldest row first, so a
 // cron run adds to the end and cuts from the front without parsing every row. They
-// are unpacked only when the page or the API is served. ~110 KB for 22 targets, far
+// are unpacked only when the page or the API is served. ~115 KB for 23 targets, far
 // under KV's 25 MiB value limit.
 //
 // Version 1 kept the same rows as arrays of arrays, plus each site's url.

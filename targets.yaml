@@ -102,3 +102,7 @@ targets:
     url: https://applytrack.pages.dev/
     expect_status: 200
     expect_keyword: "ApplyTrack"
+  - name: setupcord
+    url: https://setupcord.pages.dev/health
+    expect_status: 200
+    expect_keyword: '"ok":true'

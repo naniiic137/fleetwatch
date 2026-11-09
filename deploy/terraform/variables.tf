@@ -127,6 +127,7 @@ variable "targets" {
     { name = "belote", url = "https://belote-tn.pages.dev/", expect_keyword = "Belote" },
     { name = "interview-room", url = "https://interview-room.pages.dev/", expect_keyword = "Interview Room" },
     { name = "applytrack", url = "https://applytrack.pages.dev/", expect_keyword = "ApplyTrack" },
+    { name = "setupcord", url = "https://setupcord.pages.dev/health", expect_keyword = "\"ok\":true" },
   ]
 
   validation {
